@@ -1,5 +1,11 @@
-Présentation
+Vecteur de confiance dans une équpe pluridisciolinaire dans le cadre d'une prise de décision
+----------
+---------------------------------------------------
+| BOUSSAA Mohamed - CHETOUANI Tina - HISSIROU Fodé |
+--------------------------------------------------
 
+
+## Présentation
 Dans le cadre d'un projet de modélisation de système complexe introduit par Monsieur Banos, nous avons coopéré pour trouver une problématique. 
 Après 
 
