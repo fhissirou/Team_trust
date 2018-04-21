@@ -75,13 +75,20 @@ to setup-personnes [ number ]
     set pDegre_introversion_extraversion random-float 10
 
 
-   ;; if(pCatAge = Senior)[ set color black]
-    ;;if(pCatAge = Moyen)[ set color orange]
-    ;;if(pCatAge = Jeune)[ set color green]
 
-    if(pGenre = Homme)[ set color blue]
+    if(Type-Affichage = "Age")[
+      if(pCatAge = Senior)[ set color black]
+      if(pCatAge = Moyen)[ set color orange]
+      if(pCatAge = Jeune)[ set color green]
+    ]
 
-    if(pGenre = Femme)[ set color pink]
+    if(Type-Affichage = "Genre")[
+      if(pGenre = Homme)[ set color blue]
+      if(pGenre = Femme)[ set color pink]
+    ]
+
+    if(Type-Affichage = "Genre")[ set color blac]
+
 
 
   ]
@@ -235,7 +242,7 @@ NB-OF-AGENTS
 NB-OF-AGENTS
 3
 50
-35.0
+50.0
 1
 1
 NIL
@@ -278,7 +285,7 @@ CHOOSER
 208
 Type-Affichage
 Type-Affichage
-"Genre" "Age"
+"None" "Genre" "Age"
 0
 
 @#$#@#$#@
