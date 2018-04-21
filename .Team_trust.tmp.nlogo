@@ -1,4 +1,169 @@
+breed [Personnes personne]
+breed [ Tables table]
 
+Personnes-own [
+
+  pGenre pCatAge pPoidsAge pExperience pDistance_sujet  ;; agent
+
+  pCortisol_Oxytocin pDegre_certitude ;; Confiance biologique_psychologique
+
+  pExpertise_sujet  pDegre_introversion_extraversion ;; Confiance en soi
+
+  pAttributs_physiques_percus pExpertise_sujet_percu ;; Confiance interpersonnelle
+
+]
+
+;; creation des variables globales
+globals [
+  Senior
+  Moyen
+  Jeune
+  Homme
+  Femme
+  CoefHomme
+  CoefFemme
+
+]
+
+;; initalisation global
+to Setup
+  clear-all
+  set-default-shape Personnes "person-trust"
+  ask patches [set pcolor gray]
+  setup-table
+  setup-globals
+  setup-personnes NB-OF-AGENTS
+  reset-ticks
+end
+
+;; creation d'une table rounde
+to setup-table
+  set-default-shape Tables "bug"
+  let table-x 0
+  let table-y 0
+  let table-size 29
+
+  ask patch table-x table-y [
+    sprout 1 [
+      set color brown
+      set shape "circle"
+      set size table-size
+      stamp
+      die
+    ]
+  ]
+end
+
+;; initalisation de l'agent personne
+to setup-personnes [ number ]
+  create-ordered-personnes number [
+    rt 180 / number
+    jump -15.5
+    rt 180
+    set size 2
+
+    set pGenre cal-genre
+    set pCatAge cal-cat-age
+    set pPoidsAge (cal_poids_age pCatAge)
+    set pAttributs_physiques_percus random-float 10
+    set pExpertise_sujet_percu random-float 10
+    set pDistance_sujet (cal_distance_sujet pPoidsAge)
+
+    ;; initialisation de la confiance biologique/psychologique
+    set pCortisol_Oxytocin random-float 10
+    set pDegre_certitude random-float 10
+    set pDegre_introversion_extraversion random-float 10
+
+
+   ;; if(pCatAge = Senior)[ set color black]
+    ;;if(pCatAge = Moyen)[ set color orange]
+    ;;if(pCatAge = Jeune)[ set color green]
+
+    if(pGenre = Homme)[ set color blue]
+
+    if(pGenre = Femme)[ set color pink]
+
+
+  ]
+end
+
+;; initialisation des variable global
+to setup-globals
+  set Senior 3
+  set Moyen 2
+  set Jeune 1
+  set Homme 1
+  set Femme 2
+  set CoefHomme 1.1
+  set CoefFemme 0.9
+
+end
+
+
+to Go
+
+  ask personnes  [
+
+
+  ]
+
+  tick
+end
+
+to-report cal-genre
+  let val random-float 1
+
+  if(val >= 0.5)[report Homme]
+
+  report Femme
+
+end
+;; calcul du temps de prise de decision
+to-report temps_prise_decision []
+   report  2 * NB-OF-AGENTS * NB-ROUNDS
+end
+
+;; initialisation du categorie d'age
+to-report cal-cat-age
+  report 1 + random (4 - 1)
+end
+
+;; calcul du poids de l'age en fonction des categories d'ages
+to-report cal_poids_age [cat_age]
+  if(cat_age = Senior)[ report ( 7.0 + random-float 2.9)]
+  if(cat_age = Moyen)[ report (3.1 + random-float 2.8) ]
+  report (1.0 + random-float 2.9)
+end
+
+;; calcul de la distance du sujet
+to-report cal_distance_sujet [poids_age]
+  report abs(10 - poids_age)
+end
+
+;; confiance interpersonnelle
+to-report cal_confiance_interpo [attributs_physiques expertise_sujet]
+  report (attributs_physiques + expertise_sujet) / 2
+end
+
+;; confaince biologique / psychologique
+to-report cal_confiance_bio_psy [cortisol_oxytocine deg_certitude]
+  report (cortisol_oxytocine + deg_certitude) / 2
+end
+
+;; confiance en soi
+to-report cal_confiance_soi [expertise_prop_soi deg_introversion_extraversion]
+  report (expertise_prop_soi + deg_introversion_extraversion) / 2
+end
+
+;; calul de la confiance
+to-report cal_confiance [conf_bio_psy conf_interperso conf_soi]
+  report (conf_bio_psy + conf_interperso + conf_soi) / 3
+end
+
+;; calcul de l'influence
+to-report cal_influenceur [conf_inter_perso  conf_en_soi]
+   ;;(conf_inter_perso + conf_en_soi) / 2 ;;; pour chaque turle ensuite le max
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 767
@@ -33,7 +198,7 @@ BUTTON
 87
 48
 Setup
-NIL
+Setup
 NIL
 1
 T
@@ -64,13 +229,13 @@ NIL
 SLIDER
 5
 65
-180
+186
 98
-NB-OF-INDIVIDUALS
-NB-OF-INDIVIDUALS
-0
-100
-50.0
+NB-OF-AGENTS
+NB-OF-AGENTS
+3
+50
+35.0
 1
 1
 NIL
@@ -85,7 +250,7 @@ NB-ROUNDS
 NB-ROUNDS
 0
 100
-50.0
+0.0
 1
 1
 NIL
@@ -100,55 +265,20 @@ moyenne-age
 moyenne-age
 0
 100
-59.0
+2.0
 1
 1
 NIL
 HORIZONTAL
 
 CHOOSER
-4
-150
-142
-195
-Prevalance-age
-Prevalance-age
-"aleatoire" "Jeune" "Intermedire" "Sénior"
-0
-
-CHOOSER
-150
-152
-320
-197
-prevalance-discipline
-prevalance-discipline
-"Dicipline-commune" "Discipline-differente"
-0
-
-SLIDER
-3
-216
-183
-249
-Part-div-ethnique
-Part-div-ethnique
-0
-100
-50.0
-1
-1
-NIL
-HORIZONTAL
-
-CHOOSER
-491
-196
-648
-241
-Prevalance-GENRE
-Prevalance-GENRE
-"HOMME" "FEMME" "ALEATOIRE"
+205
+163
+343
+208
+Type-Affichage
+Type-Affichage
+"Genre" "Age"
 0
 
 @#$#@#$#@
@@ -368,6 +498,30 @@ Rectangle -7500403 true true 127 79 172 94
 Polygon -7500403 true true 195 90 240 150 225 180 165 105
 Polygon -7500403 true true 105 90 60 150 75 180 135 105
 
+person-trust
+true
+15
+Polygon -7500403 true false 120 135 105 135
+Polygon -6459832 false false 45 105
+Polygon -7500403 true false 60 165
+Polygon -16777216 true false 135 135
+Circle -955883 true false 150 210 0
+Rectangle -1 true true 75 150 225 285
+Polygon -1 true true 60 195 30 195 30 120 270 120 270 195 240 195 240 150 60 150 60 195
+Polygon -13345367 true false 105 120 150 195 195 120 105 120
+Polygon -2674135 true false 135 120
+Polygon -2674135 true false 120 120
+Polygon -2674135 true false 120 120 150 195
+Polygon -2674135 true false 120 120
+Polygon -2674135 true false 135 120 150 195 165 120 135 120
+Circle -1184463 true false 88 13 122
+Circle -1 true true 105 45 30
+Circle -1 true true 165 45 30
+Polygon -1 true true 150 60 135 90 150 90 150 60
+Polygon -1 true true 120 120
+Polygon -1 true true 135 105
+Polygon -1 true true 120 105 135 120 165 120 180 105 120 105
+
 plant
 false
 0
@@ -411,6 +565,11 @@ star
 false
 0
 Polygon -7500403 true true 151 1 185 108 298 108 207 175 242 282 151 216 59 282 94 175 3 108 116 108
+
+table_trust
+true
+0
+Circle -7500403 true true 45 45 210
 
 target
 false
