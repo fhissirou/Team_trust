@@ -29,7 +29,7 @@ globals [
 to Setup
   clear-all
   set-default-shape Personnes "person-trust"
-  ask patches [set pcolor gray]
+  ask patches [set pcolor black]
   setup-table
   setup-globals
   setup-personnes NB-OF-AGENTS
@@ -77,7 +77,7 @@ to setup-personnes [ number ]
 
 
     if(Type-Affichage = "Age")[
-      if(pCatAge = Senior)[ set color black]
+      if(pCatAge = Senior)[ set color gray]
       if(pCatAge = Moyen)[ set color orange]
       if(pCatAge = Jeune)[ set color green]
     ]
@@ -87,10 +87,11 @@ to setup-personnes [ number ]
       if(pGenre = Femme)[ set color pink]
     ]
 
-    if(Type-Affichage = "None")[ set color black]
+    if(Type-Affichage = "None")[ set color gray]
+  ]
 
-
-
+   ask personnes [
+    create-links-to other personnes with[ pExpertise_sujet_percu > [ pExpertise_sujet_percu ] of myself ]
   ]
 end
 
@@ -173,9 +174,9 @@ to-report cal_influenceur [conf_inter_perso  conf_en_soi]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-767
+425
 10
-1204
+862
 448
 -1
 -1
@@ -186,8 +187,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -16
 16
@@ -241,8 +242,8 @@ SLIDER
 NB-OF-AGENTS
 NB-OF-AGENTS
 3
-50
-50.0
+30
+15.0
 1
 1
 NIL
