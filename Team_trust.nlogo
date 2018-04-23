@@ -1,4 +1,8 @@
+
+extensions [palette array]
+
 breed [Personnes personne]
+breed [Decisions decision]
 breed [ Tables table]
 
 Personnes-own [
@@ -10,6 +14,8 @@ Personnes-own [
   pExpertise_sujet  pDegre_introversion_extraversion ;; Confiance en soi
 
   pAttributs_physiques_percus pExpertise_sujet_percu ;; Confiance interpersonnelle
+
+  pConfiance pErreur pForce pVote
 
 ]
 
@@ -23,6 +29,13 @@ globals [
   CoefHomme
   CoefFemme
 
+
+  ValeurBase
+  Normalisation
+
+  ValeurMu
+  ValeurVariation
+
 ]
 
 ;; initalisation global
@@ -33,6 +46,10 @@ to Setup
   setup-table
   setup-globals
   setup-personnes NB-OF-AGENTS
+
+  cal_normalisation
+  setup-score-distribution
+
   reset-ticks
 end
 
@@ -73,7 +90,7 @@ to setup-personnes [ number ]
     set pCortisol_Oxytocin random-float 10
     set pDegre_certitude random-float 10
     set pDegre_introversion_extraversion random-float 10
-
+    set pConfiance 0
 
 
     if(Type-Affichage = "Age")[
@@ -90,9 +107,7 @@ to setup-personnes [ number ]
     if(Type-Affichage = "None")[ set color gray]
   ]
 
-   ask personnes [
-    create-links-to other personnes with[ pExpertise_sujet_percu > [ pExpertise_sujet_percu ] of myself ]
-  ]
+
 end
 
 ;; initialisation des variable global
@@ -109,14 +124,29 @@ end
 
 
 to Go
+  if ticks = NB-ROUNDS [ stop ]
 
+  ask decisions [ die ]
   ask personnes  [
 
+    let confiance_psycho (cal_confiance_bio_psy pCortisol_Oxytocin pDegre_certitude)
+    let confiance_interpo (cal_confiance_interpo pAttributs_physiques_percus pExpertise_sujet_percu)
+    let confiance_soi (cal_confiance_soi pExpertise_sujet  pDegre_introversion_extraversion)
 
+    set pConfiance (cal_confiance confiance_psycho confiance_interpo confiance_soi)
   ]
 
   tick
 end
+
+to cal_normalisation
+   set ValeurBase array:from-list [ 0.50 0.842 0.587 0.826 0.628 0.819 0.652
+     0.815 0.669 0.813 0.681 0.812 0.691 0.811 0.698 0.810 0.704 0.809
+     0.710 0.809 0.714 0.808 0.719 0.808 0.722 0.808 0.725 0.808 0.728]
+   set Normalisation ( array:item ValeurBase (NB-OF-AGENTS - 2))
+end
+
+
 
 to-report cal-genre
   let val random-float 1
@@ -172,6 +202,39 @@ end
 to-report cal_influenceur [conf_inter_perso  conf_en_soi]
    ;;(conf_inter_perso + conf_en_soi) / 2 ;;; pour chaque turle ensuite le max
 end
+
+
+
+
+
+to setup-score-distribution
+
+  set ValeurMu median(n-values Niveau-Force [i -> i + 1])
+  set ValeurVariation 2 * (Niveau-Force / 10) ^ 2
+
+  ask Personnes [
+  if Type-Distribution = "Normale" [
+      set pForce round(random-normal ValeurMu ValeurVariation)
+      if pForce > Niveau-Force [ set pForce Niveau-Force ]
+      if pForce < 1 [ set pForce 1 ]
+  ]
+
+  if Type-Distribution = "Uniforme" [
+      set pForce ( random Niveau-Force ) + 1
+    ]
+
+  if Type-Distribution = "Constante" [
+      set pForce round(Niveau-Force / 2)
+    ]
+
+  set size sqrt pForce
+  ]
+
+  ask Personnes [
+    create-links-to other personnes with[ pForce > [ pForce ] of myself ]
+  ]
+end
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 425
@@ -223,8 +286,8 @@ BUTTON
 167
 49
 Go
-NIL
-NIL
+Go
+T
 1
 T
 OBSERVER
@@ -243,7 +306,7 @@ NB-OF-AGENTS
 NB-OF-AGENTS
 3
 30
-15.0
+14.0
 1
 1
 NIL
@@ -256,9 +319,9 @@ SLIDER
 100
 NB-ROUNDS
 NB-ROUNDS
-0
-100
-0.0
+3
+1000
+1000.0
 1
 1
 NIL
@@ -288,6 +351,46 @@ Type-Affichage
 Type-Affichage
 "None" "Genre" "Age"
 2
+
+PLOT
+891
+23
+1224
+315
+Moyen confiance / nb-rounds
+nb-rounds
+moyenne-confiance
+-10.0
+1000.0
+-10.0
+10.0
+true
+false
+"" ""
+PENS
+"normal-confiance" 1.0 0 -14454117 true "" "plot mean[pConfiance] of Personnes"
+"line-zero" 1.0 0 -13840069 true "" "plot(0)"
+
+CHOOSER
+67
+235
+222
+280
+Type-Distribution
+Type-Distribution
+"Normale" "Uniforme" "Constante"
+2
+
+INPUTBOX
+84
+387
+245
+447
+Niveau-Force
+5.0
+1
+0
+Number
 
 @#$#@#$#@
 ## WHAT IS IT?
