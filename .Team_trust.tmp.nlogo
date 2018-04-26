@@ -145,7 +145,7 @@ to Go
         sprout 1 [
           set color palette:scale-gradient palette:scheme-colors "Divergent"  "RdBu" (Confiance-Interpersonnelle + 1) val (-1 * Confiance-Interpersonnelle) Confiance-Interpersonnelle
           set shape "star"
-          set size 4
+          set size
           stamp
           die
         ]
@@ -163,7 +163,7 @@ to Go
         sprout 1 [
           set color palette:scale-gradient palette:scheme-colors "Divergent"  "RdBu" (Confiance-Interpersonnelle + 1) val2 (-1 * Confiance-Interpersonnelle) Confiance-Interpersonnelle
           set shape "star"
-          set size 4
+          set size 6
           stamp
           die
         ]
@@ -525,7 +525,7 @@ moyenne-age
 moyenne-age
 0
 100
-26.0
+2.0
 1
 1
 NIL
