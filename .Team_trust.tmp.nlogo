@@ -14,9 +14,9 @@ Personnes-own [
 
   pAttributs_physiques_percus pExpertise_sujet_percu ;; Confiance interpersonnelle
 
-  pConfiance pErreur pForce pVote pPermission
+  pConfiance pErreur pForce deg_certitude
 
-  pMonChoix pDiff_choix_interet pChoix_individuel pChoix_collectif  pUtility pPerceived pMatch pMonVote
+  pMonChoix pDiff_choix_interet pChoix_individuel pChoix_collectif  deg_introversion_extraversion expertise_prop_soi pMatch pMonVote
 
 ]
 
@@ -30,20 +30,24 @@ globals [
   CoefHomme
   CoefFemme
 
-
-  ValeurBase
-  Normalisation
+  Confiance_bio_psycho
 
   ValeurMu
   ValeurVariation
   Criteres Interet_individuel Interet_collectif
   NBPointsConfiant
-  OuiConfiant NonConfiant
+  Deg_Confiant Deg_Mefiance
   Liens_cooperation
   choixFinal
   Option
   Confirm
+NB-Votants_A
+  NB-Votants_B
 
+  Genre_influ_A
+  Age_influ_A
+  Genre_influ_B
+  Age_influ_B
 ]
 
 
@@ -57,7 +61,7 @@ to Setup
   setup-globals
   setup-personnes NB-OF-AGENTS
 
-  cal_normalisation
+  cal_Confiance_bio_psycho
   setup-score-distribution
 
   reset-ticks
@@ -130,45 +134,65 @@ to setup-globals
   set CoefHomme 1.1
   set CoefFemme 0.9
 
+   set Genre_influ_A "NaN"
+  set Age_influ_A "NaN"
+  set Genre_influ_B "NaN"
+  set Age_influ_B "NaN"
+
 end
 
 
 to Go
   if ticks = NB-ROUNDS [
-  ask max-one-of Personnes [ pForce] [
+  ask max-one-of Personnes [ deg_certitude] [
     let a xcor
     let b ycor
-    let val pPermission
-    ask patch-ahead 1
+    let val deg_certitude
+    ask patch-ahead 2
     [
       ask patch a b [
         sprout 1 [
-          set color palette:scale-gradient palette:scheme-colors "Divergent"  "RdBu" (Confiance-Interpersonnelle + 1) val (-1 * Confiance-Interpersonnelle) Confiance-Interpersonnelle
+            set color green ;;palette:scale-gradient [[255 0 0] [0 0 255]] pxcor min-pxcor val
+          ;;set color palette:scale-gradient palette:scheme-colors "Divergent"  "RdBu" (Confiance-Interpersonnelle + 1) val (-1 * Confiance-Interpersonnelle) Confiance-Interpersonnelle
           set shape "star"
-          set size
+          set size 4
           stamp
           die
         ]
       ]
     ]
-  ]
 
-   ask min-one-of Personnes [ pForce] [
+      if(pCatAge = Senior)[ set Age_influ_A "Senior"]
+      if(pCatAge = Moyen)[ set Age_influ_A "intermédiaire"]
+      if(pCatAge = Jeune)[ set Age_influ_A "Jeune"]
+      if(pGenre = Homme)[ set Genre_influ_A "Homme"]
+      if(pGenre = Femme)[ set Genre_influ_A "Femme"]
+
+    ]
+
+   ask min-one-of Personnes [ deg_certitude] [
     let a2 xcor
     let b2 ycor
-    let val2 pPermission
-    ask patch-ahead 1
+    let val2 deg_certitude
+    ask patch-ahead 2
     [
       ask patch a2 b2 [
         sprout 1 [
-          set color palette:scale-gradient palette:scheme-colors "Divergent"  "RdBu" (Confiance-Interpersonnelle + 1) val2 (-1 * Confiance-Interpersonnelle) Confiance-Interpersonnelle
+            set color red ;;palette:scale-gradient [[255 0 0] [0 0 255]] pxcor val2 max-pxcor
+          ;;set color palette:scale-gradient palette:scheme-colors "Divergent"  "RdBu" (Confiance-Interpersonnelle + 1) val2 (-1 * Confiance-Interpersonnelle) Confiance-Interpersonnelle
           set shape "star"
-          set size 6
+          set size 4
           stamp
           die
         ]
       ]
     ]
+
+      if(pCatAge = Senior)[ set Age_influ_B "Senior"]
+      if(pCatAge = Moyen)[ set Age_influ_B "intermédiaire"]
+      if(pCatAge = Jeune)[ set Age_influ_B "Jeune"]
+      if(pGenre = Homme)[ set Genre_influ_B "Homme"]
+      if(pGenre = Femme)[ set Genre_influ_B "Femme"]
   ]
 
   stop ]
@@ -193,26 +217,15 @@ to Go
   urnes-votes
   estimation
   prise-decision
-adjust
+amelioreation
   tick
-
-  ;;ask personnes  [
-
-    ;;let confiance_psycho (cal_confiance_bio_psy pCortisol_Oxytocin pDegre_certitude)
-    ;;let confiance_interpo (cal_confiance_interpo pAttributs_physiques_percus pExpertise_sujet_percu)
-    ;;let confiance_soi (cal_confiance_soi pExpertise_sujet  pDegre_introversion_extraversion)
-
-    ;;set pConfiance (cal_confiance confiance_psycho confiance_interpo confiance_soi)
-  ;;]
-
-  ;;tick
 end
 
-to cal_normalisation
-   set ValeurBase array:from-list [ 0.50 0.842 0.587 0.826 0.628 0.819 0.652
+to cal_Confiance_bio_psycho
+   let Cortisol_Oxytocin array:from-list [ 0.50 0.842 0.587 0.826 0.628 0.819 0.652
      0.815 0.669 0.813 0.681 0.812 0.691 0.811 0.698 0.810 0.704 0.809
      0.710 0.809 0.714 0.808 0.719 0.808 0.722 0.808 0.725 0.808 0.728]
-   set Normalisation ( array:item ValeurBase (NB-OF-AGENTS - 2))
+   set Confiance_bio_psycho ( array:item Cortisol_Oxytocin (NB-OF-AGENTS - 2))
 end
 
 
@@ -252,16 +265,6 @@ to-report cal_confiance_interpo [attributs_physiques expertise_sujet]
   report (attributs_physiques + expertise_sujet) / 2
 end
 
-;; confaince biologique / psychologique
-to-report cal_confiance_bio_psy [cortisol_oxytocine deg_certitude]
-  report (cortisol_oxytocine + deg_certitude) / 2
-end
-
-;; confiance en soi
-to-report cal_confiance_soi [expertise_prop_soi deg_introversion_extraversion]
-  report (expertise_prop_soi + deg_introversion_extraversion) / 2
-end
-
 ;; calul de la confiance
 to-report cal_confiance [conf_bio_psy conf_interperso conf_soi]
   report (conf_bio_psy + conf_interperso + conf_soi) / 3
@@ -299,25 +302,33 @@ to setup-score-distribution
   set size sqrt pForce
   ]
 
-  ask Personnes [
-    create-links-to other personnes with[ pForce >= [ pForce ] of myself ]
-  ]
+  ;;ask Personnes [
+   ;; create-links-to other personnes with[ pForce >= [ pForce ] of myself ]
+ ;; ]
 end
 
 
 to choisir-options
+    set NB-Votants_A 0
+  set NB-Votants_B 0
     ask Personnes [
       set pChoix_individuel random-float 10
       set pChoix_collectif  random-float 10
       set pDiff_choix_interet pChoix_individuel - pChoix_collectif
       ifelse pDiff_choix_interet > 0
-      [ set pMonChoix "A" ]
-      [ set pMonChoix "B" ]
+      [ set pMonChoix "A"
+    set NB-Votants_A (NB-Votants_A + 1)
+    ]
+      [ set pMonChoix "B"
+            set NB-Votants_B (NB-Votants_B + 1)
+    ]
     ]
 
     ifelse sum [ pDiff_choix_interet ] of Personnes >  0
-    [ set Option "A" ]
-    [ set Option "B" ]
+    [ set Option "A"
+  ]
+    [ set Option "B"
+  ]
 end
 
 
@@ -328,28 +339,32 @@ to estimation
     set pErreur ( -1 * x + random-float( 2 * x ) )
     let weighted_utility false
     ifelse weighted_utility = true ;; not a true weighed average since we're only interested in the sign, same perception error added to each linked utility
-    [ set pUtility pDiff_choix_interet * pForce + sum [ ([ pErreur ] of myself + pDiff_choix_interet) * (max list (pForce - [ pForce ] of myself + 1)  1) ] of out-link-neighbors ]
-    [ set pUtility pDiff_choix_interet * pForce + sum [ [ pErreur ] of myself + pDiff_choix_interet ] of other Personnes ]
+    [ set deg_introversion_extraversion pDiff_choix_interet * pForce + sum [ ([ pErreur ] of myself + pDiff_choix_interet) * (max list (pForce - [ pForce ] of myself + 1)  1) ] of out-link-neighbors ]
+    [ set deg_introversion_extraversion pDiff_choix_interet * pForce + sum [ [ pErreur ] of myself + pDiff_choix_interet ] of other Personnes ]
 
-    ifelse pUtility < 0
-    [ set pPerceived "B" ]
-    [ set pPerceived "A" ]
+    ifelse deg_introversion_extraversion < 0
+    [ set expertise_prop_soi "B" ]
+    [ set expertise_prop_soi "A" ]
   ]
 end
 
 to prise-decision
   set Confirm 0
 
+
   ask Personnes [
     ifelse pMonChoix = Option
-      [ set pMatch 1 ]
-      [ set pMatch 0 ]
+      [ set pMatch 1
+    ]
+      [ set pMatch 0
+    ]
+
     ifelse pMonVote = 0
-      [ ifelse Type-Selection = "Sans_Votes"
-        [ if pPerceived = Option [ set Confirm Confirm + 1 ] ]
-        [ if pPerceived = Option [ set Confirm Confirm + pForce ] ]
-      ]
-      [ if pMonChoix = Option [ set Confirm Confirm + 1 ]
+    [if expertise_prop_soi = Option
+      [ set Confirm Confirm + 1 ]
+    ]
+    [ if pMonChoix = Option
+      [ set Confirm Confirm + 1 ]
         set pMonVote 0
       ]
   ]
@@ -361,17 +376,12 @@ to urnes-votes
     ifelse pMonChoix = "A"
       [ set Interet_individuel Interet_individuel + 1 ]
       [ set Interet_collectif Interet_collectif + 1 ] ]
-
-    ifelse Type-Selection = "Sans_Votes"
-    [ set Criteres NB-OF-AGENTS / 2 ]
-    [ set Criteres ( sum [ pForce ] of Personnes ) / 2 ]
-
-
+    set Criteres NB-OF-AGENTS / 2
     create-Decisions 1 [
     if Confirm > Criteres
     [ set color green
       set choixFinal 1
-      set OuiConfiant OuiConfiant + 1 ]
+      set Deg_Confiant Deg_Confiant + 1 ]
     if Confirm = Criteres
     [ set color yellow
       set choixFinal 0
@@ -379,11 +389,11 @@ to urnes-votes
     if Confirm < Criteres
     [ set color red
       set choixFinal -1
-      set NonConfiant NonConfiant + 1 ]
+      set Deg_Mefiance Deg_Mefiance + 1 ]
       set size 4
-     set shape "x"
+     set shape "circle"
     ]
-  set NBPointsConfiant (OuiConfiant) / (OuiConfiant + NonConfiant + Liens_cooperation ) * 100
+  set NBPointsConfiant (Deg_Confiant) / (Deg_Confiant + Deg_Mefiance + Liens_cooperation ) * 100
 
 end
 
@@ -391,35 +401,41 @@ end
 
 
 
-to adjust
+to amelioreation
 
   ask Personnes [
     ask my-out-links [die]
 
     ; + + scenario
     if choixFinal > 0 and pMonChoix = Option [
-      if ( (pForce - pPermission) > 1 ) [ set pPermission pPermission + 1 ]
+      if ( (pForce - deg_certitude) > 1 ) [ set deg_certitude deg_certitude + 1 ]
+      ask patch-ahead 1
+      [ set pcolor green]
     ]
     ; + - scenario
     if choixFinal > 0 and pMonChoix != Option [
-      if ( pPermission > 0 ) [ set pPermission pPermission - 1 ]
+      if ( deg_certitude > 0 ) [ set deg_certitude deg_certitude - 1 ]
+      Let val deg_certitude
+      ask patch-ahead 1
+      [ set pcolor red]
     ]
     ; - + scenario
     if choixFinal < 0 and pMonChoix = Option [ ; - + scenario
-      if ( (pForce - pPermission) > 1 ) [ set pPermission pPermission + 1 ]
+      if ( (pForce - deg_certitude) > 1 ) [ set deg_certitude deg_certitude + 1 ]
+      Let val deg_certitude
+            ask patch-ahead 1
+      [ set pcolor green]
     ]
     ; - - scenario
     if choixFinal < 0 and pMonChoix != Option [
-        set pPermission -1 * pForce
-
-      ;;  [ set pVote 1
-        ;;  set pPermission 0 ]
+       set deg_certitude -1 * pForce
+            ask patch-ahead 1
+      [ set pcolor red]
     ]
 
-    create-links-to other Personnes with [ pForce >= [ pForce - pPermission ] of myself ]
-    Let val pPermission
-    ask patch-ahead 1
-      [ set pcolor palette:scale-gradient palette:scheme-colors "Divergent"  "RdBu" (Confiance-Interpersonnelle + 1) val (-1 * Confiance-Interpersonnelle) Confiance-Interpersonnelle ]
+    create-links-to other Personnes with [ pForce >= [ pForce - deg_certitude ] of myself ]
+    Let val deg_certitude
+
 
   ]
 
@@ -453,10 +469,10 @@ ticks
 30.0
 
 BUTTON
-13
-15
-87
-48
+39
+12
+113
+45
 Setup
 Setup
 NIL
@@ -470,10 +486,10 @@ NIL
 1
 
 BUTTON
-104
-16
-167
-49
+172
+10
+235
+43
 Go
 Go
 T
@@ -488,54 +504,39 @@ NIL
 
 SLIDER
 5
-65
+53
 186
-98
+86
 NB-OF-AGENTS
 NB-OF-AGENTS
 3
 30
-18.0
+25.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-190
-17
-362
-50
+9
+91
+181
+124
 NB-ROUNDS
 NB-ROUNDS
 3
 300
-262.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-3
-107
-175
-140
-moyenne-age
-moyenne-age
-0
-100
-2.0
+300.0
 1
 1
 NIL
 HORIZONTAL
 
 CHOOSER
-197
-60
-335
-105
+13
+129
+151
+174
 Type-Affichage
 Type-Affichage
 "None" "Genre" "Age"
@@ -543,9 +544,9 @@ Type-Affichage
 
 PLOT
 6
-241
-339
-533
+219
+318
+512
 Moyen confiance / nb-rounds
 nb-rounds
 moyenne-confiance
@@ -557,43 +558,111 @@ true
 false
 "" ""
 PENS
-"normal-confiance" 1.0 0 -14454117 true "" "ifelse ticks < 1\n[ stop ]\n[ plot ( ( ( OuiConfiant  / ( OuiConfiant + NonConfiant + Liens_cooperation ) ) -  Normalisation ) * 100 ) ]"
+"normal-confiance" 1.0 0 -14454117 true "" "ifelse ticks < 1\n[ stop ]\n[ plot ( ( ( Deg_Confiant / ( Deg_Confiant + Deg_Mefiance + Liens_cooperation ) ) -  Confiance_bio_psycho ) * 100 ) ]"
 "line-zero" 1.0 0 -5298144 true "" "plot(0)"
 
 CHOOSER
-7
-150
-162
-195
+205
+64
+360
+109
 Type-Distribution
 Type-Distribution
 "Normale" "Uniforme" "Constante"
-2
-
-CHOOSER
-195
-114
-333
-159
-Type-Selection
-Type-Selection
-"Sans_Votes" "Votes"
 0
 
 SLIDER
-12
-200
-263
-233
+7
+179
+258
+212
 Confiance-Interpersonnelle
 Confiance-Interpersonnelle
 0
+10
+6.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+190
+133
+376
+166
+cortisol_ocytocine
+cortisol_ocytocine
+1
 10
 5.0
 1
 1
 NIL
 HORIZONTAL
+
+PLOT
+321
+177
+749
+510
+nb-votant / nb-rounds
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"NB-Votants_A" 1.0 1 -11085214 true "" "plot NB-Votants_A"
+"NB-Votants_B" 1.0 1 -2674135 true "" "plot NB-Votants_B "
+
+MONITOR
+378
+15
+526
+60
+Genre_influenceur_A
+Genre_influ_A
+17
+1
+11
+
+MONITOR
+561
+10
+710
+55
+Genre_influenceur_B
+Genre_influ_B
+17
+1
+11
+
+MONITOR
+377
+71
+538
+116
+Cat_age_influenceur_A
+Age_influ_A
+17
+1
+11
+
+MONITOR
+565
+71
+724
+116
+cat_age_influenceur_B
+Age_influ_B
+17
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
